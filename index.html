@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HawaPani</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #87CEEB;
+            color: rgb(16, 15, 15);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 90%;
+            margin: 50px auto;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .inputtag {
+            display: flex;
+            max-width: 100%;
+            gap: 10px;
+            margin: auto;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+            min-width: 200px;
+        }
+
+        button {
+            background-color: #4682B4;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 90px;
+        }
+
+        button:hover {
+            background-color: #1E90FF;
+        }
+
+        .weather {
+            margin-top: 20px;
+        }
+
+        .today, .error {
+            font-size: 18px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .error {
+            display: none;
+            background: rgba(255, 0, 0, 0.3);
+            color: red;
+        }
+
+        .forecast {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-size: 18px;
+            background: #4682B4;
+            border-radius: 10px;
+            margin-top: 10px;
+            padding: 10px;
+        }
+
+        .forecast-item {
+            padding: 10px;
+            background: rgba(70, 130, 180, 0.7);
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HawaPani</h1>
+        <div class="inputtag">
+            <input type="text" id="location" placeholder="Enter Your Location">
+            <button id="submit">🔍</button>
+        </div>
+        <div class="weather">
+            <div class="error"></div>
+            <div class="today"></div>
+            <div class="forecast"></div>
+        </div>Aditya Rauniyar :
+        <a href="https://github.com/bratAR">GitHub</a>
+        <a href="https://www.facebook.com/adee.tya.39">Facebook</a>
+        <a href="https://www.instagram.com/_adityar.7/">Instagram</a>
+    </div>
+    <script>
+        const apikey = "ed826a357c773d11340fda2875caf5f6";
+
+        document.getElementById("submit").addEventListener("click", getWeather);
+        document.getElementById("location").addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                getWeather();
+            }
+        });
+
+        window.onload = function () {
+            document.getElementById("location").value = "Birtamod, Jhapa, Nepal";
+            getWeather();
+        };
+
+        function showError(message) {
+            const errorDiv = document.querySelector(".error");
+            errorDiv.innerHTML = `<h3>${message}</h3>`;
+            errorDiv.style.display = "block";
+        }
+
+        function hideError() {
+            document.querySelector(".error").style.display = "none";
+        }
+
+        function getWeather() {
+            let city = document.getElementById("location").value.trim();
+            if (city === "") city = "Haldibari, Mechi, Nepal";
+
+            const currentWeatherURL = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apikey}&units=metric`;
+            const forecastURL = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apikey}&units=metric`;
+
+            hideError(); 
+
+            fetch(currentWeatherURL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.cod === 200) {
+                        const sunrise = new Date(data.sys.sunrise * 1000).toLocaleTimeString();
+                        const sunset = new Date(data.sys.sunset * 1000).toLocaleTimeString();
+                        const windSpeed = data.wind.speed;
+
+                        document.querySelector(".today").innerHTML = `
+                            <h2>${data.name}</h2>
+                            <div class="main">
+                                <div class="left">
+                                    <p>Temperature: ${data.main.temp}°C</p>
+                                    <p>Condition: ${data.weather[0].description}</p>
+                                </div>
+                                <div class="center">
+                                    <p>Sunrise: ${sunrise}</p>
+                                    <p>Sunset: ${sunset}</p>
+                                </div>
+                                <div class="right">
+                                    <p>Wind Speed: ${windSpeed} m/s</p>
+                                    <p>Humidity: ${data.main.humidity}%</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        showError("❌ City not found! Please try again.");
+                    }
+                })
+                .catch(() => showError("⚠️ Error fetching current weather!"));
+
+            fetch(forecastURL)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.cod === "200") {
+                        const forecastDiv = document.querySelector(".forecast");
+                        forecastDiv.innerHTML = ""; 
+
+                        let dailyTemps = {};
+
+                        data.list.forEach(entry => {
+                            let date = entry.dt_txt.split(" ")[0]; 
+                            if (!dailyTemps[date]) {
+                                dailyTemps[date] = {
+                                    temp: entry.main.temp,
+                                    condition: entry.weather[0].description
+                                };
+                            }
+                        });
+
+                        let dates = Object.keys(dailyTemps).slice(1, 5); 
+
+                        dates.forEach(date => {
+                            let day = new Date(date).toLocaleDateString("en-US", { weekday: "long" });
+                            let { temp, condition } = dailyTemps[date];
+
+                            forecastDiv.innerHTML += `
+                                <div class="forecast-item">
+                                    <h3>${day}</h3>
+                                    <p>${temp}°C</p>
+                                    <p>${condition}</p>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        showError("⚠️ Error fetching forecast. Please try again.");
+                    }
+                })
+                .catch(() => showError("⚠️ Error fetching forecast data!"));
+        }
+    </script>
+
+</body>
+</html>
